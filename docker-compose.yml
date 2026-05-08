@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: portfolio_db
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: portfolio
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redpanda:
+    image: redpandadata/redpanda:v24.3.5
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+
+  portfolio-service:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://portfolio:portfolio@postgres:5432/portfolio_db
+      KAFKA_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      WALLET_SERVICE_URL: http://wallet-service:8000
+      MARKET_DATA_SERVICE_URL: http://market-data-service:8000
+      MARKET_WS_ENABLED: "true"
+      MARKET_WS_URL: ws://exchange-server:8080/ws
+      MARKET_WS_API_KEY: test-api-key
+      MARKET_WS_API_SECRET: test-api-secret
+      MARKET_WS_DEFAULT_TICKERS: AAPL,JPM
+      MARKET_WS_RESUBSCRIBE_SECONDS: "30"
+    ports:
+      - "8004:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+
+volumes:
+  postgres-data:
