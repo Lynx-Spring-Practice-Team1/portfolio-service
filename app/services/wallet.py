@@ -14,10 +14,10 @@ class WalletClient:
         if not self.settings.wallet_service_url:
             return CashBalance()
 
-        url = f"{self.settings.wallet_service_url.rstrip('/')}/wallet/balance"
+        url = f"{self.settings.wallet_service_url.rstrip('/')}/internal/wallet/{user_id}/balance"
         try:
             async with httpx.AsyncClient(timeout=self.settings.http_timeout_seconds) as client:
-                response = await client.get(url, params={"user_id": user_id})
+                response = await client.get(url)
                 response.raise_for_status()
                 data = response.json()
         except httpx.HTTPError:

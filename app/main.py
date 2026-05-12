@@ -8,9 +8,9 @@ from sqlalchemy import select
 
 from app.api.routes import router
 from app.core.config import get_settings
-from app.db.session import async_session_factory
+from app.db.session import async_session_factory, engine
 from app.kafka.consumer import PortfolioKafkaWorker
-from app.models import Position
+from app.models import Base, Position
 from app.services.pricing import MarketWebsocketPriceStreamer
 
 
@@ -20,6 +20,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     worker: PortfolioKafkaWorker | None = None
     price_streamer: MarketWebsocketPriceStreamer | None = None
     price_streamer_task: asyncio.Task | None = None
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     if settings.kafka_enabled:
         worker = PortfolioKafkaWorker(async_session_factory, settings)

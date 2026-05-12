@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import JSON, DateTime, Numeric, String, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -79,3 +79,12 @@ class PortfolioEventError(Base):
     reason: Mapped[str] = mapped_column(String(512), nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class EquitySnapshot(Base):
+    __tablename__ = "equity_snapshots"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    value: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)

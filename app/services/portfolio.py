@@ -116,7 +116,7 @@ class PortfolioService:
                 ),
             )
 
-        realized_pnl = self._q(sum(Decimal(position.realized_pnl) for position in all_positions))
+        realized_pnl = self._q(sum((Decimal(position.realized_pnl) for position in all_positions), Decimal("0")))
         total_market_value = self._q(total_market_value)
         total_unrealized = self._q(total_unrealized)
         return PortfolioSnapshot(
