@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     market_ws_url: str | None = Field(default="ws://localhost:8080/ws")
     market_ws_api_key: str | None = None
     market_ws_api_secret: str | None = None
-    market_ws_default_tickers: str = "AAPL,JPM"
+    market_ws_default_tickers: str = ""
     market_ws_resubscribe_seconds: int = 30
     price_cache_ttl_seconds: int = 15
     http_timeout_seconds: float = 3.0
