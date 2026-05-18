@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_user_id
 from app.core.config import get_settings
 from app.db.session import get_session
 from app.models import EquitySnapshot, Position
@@ -57,28 +58,20 @@ async def health() -> dict[str, str]:
 @router.get("/portfolio", response_model=PortfolioSnapshot)
 async def get_portfolio(
     session: Annotated[AsyncSession, Depends(get_session)],
-    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
+    user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> PortfolioSnapshot:
-    if not x_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="X-User-Id header is required",
-        )
-
     service = PortfolioService(session)
-    return await service.get_snapshot(x_user_id)
+    return await service.get_snapshot(user_id)
 
 
 @router.get("/api/portfolio/equity-snapshots", response_model=list[EquitySnapshotOut])
 async def get_equity_snapshots(
     session: Annotated[AsyncSession, Depends(get_session)],
-    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
+    user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> list[EquitySnapshotOut]:
-    if not x_user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-User-Id required")
     rows = await session.scalars(
         select(EquitySnapshot)
-        .where(EquitySnapshot.user_id == x_user_id)
+        .where(EquitySnapshot.user_id == user_id)
         .order_by(EquitySnapshot.time.desc())
         .limit(10)
     )
@@ -89,11 +82,9 @@ async def get_equity_snapshots(
 async def save_equity_snapshot(
     body: EquitySnapshotIn,
     session: Annotated[AsyncSession, Depends(get_session)],
-    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
+    user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> EquitySnapshotOut:
-    if not x_user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-User-Id required")
-    snap = EquitySnapshot(user_id=x_user_id, value=body.value)
+    snap = EquitySnapshot(user_id=user_id, value=body.value)
     session.add(snap)
     await session.commit()
     await session.refresh(snap)

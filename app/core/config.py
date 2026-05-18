@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     price_cache_ttl_seconds: int = 15
     http_timeout_seconds: float = 3.0
     internal_service_token: str = Field(default="change-me-in-production", alias="INTERNAL_SERVICE_TOKEN")
+    jwt_secret: str = Field(alias="JWT_SECRET")
+    jwt_algorithm: str = "HS256"
 
 
 @lru_cache
